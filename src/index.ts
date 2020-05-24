@@ -29,10 +29,12 @@ interface IRepo {
   const contributedRepoQuery = createContributedRepoQuery(username);
   const repoResponse = await githubQuery(contributedRepoQuery)
     .catch(error => console.error(`Unable to get the contributed repo\n${error}`));
-  const repos: IRepo[] = repoResponse?.data?.user?.repositoriesContributedTo?.nodes.map(repoInfo => ({
-    name: repoInfo?.name,
-    owner: repoInfo?.owner?.login,
-  }));
+  const repos: IRepo[] = repoResponse?.data?.user?.repositoriesContributedTo?.nodes
+    .filter(repoInfo => (!repoInfo?.isFork))
+    .map(repoInfo => ({
+      name: repoInfo?.name,
+      owner: repoInfo?.owner?.login,
+    }));
 
   /**
    * Third, get commit time and parse into commit-time/hour diagram
@@ -51,7 +53,7 @@ interface IRepo {
   committedTimeResponseMap.forEach(committedTimeResponse => {
     committedTimeResponse?.data?.repository?.ref?.target?.history?.edges.forEach(edge => {
       const committedDate = edge?.node?.committedDate;
-      const timeString = new Date(committedDate).toLocaleTimeString([ process.env.LOCALE, 'en-US' ], { hour12: false });
+      const timeString = new Date(committedDate).toLocaleTimeString('en-US', { hour12: false, timeZone: process.env.TIMEZONE });
       const hour = +(timeString.split(':')[0]);
 
       /**
@@ -71,16 +73,16 @@ interface IRepo {
   if (!sum) return;
 
   const oneDay = [
-    { label: '🌞Morning', commits: morning },
-    { label: '🌆Daytime', commits: daytime },
-    { label: '🌃Evening', commits: evening },
-    { label: '🌙Night', commits: night },
+    { label: '🌞 Morning', commits: morning },
+    { label: '🌆 Daytime', commits: daytime },
+    { label: '🌃 Evening', commits: evening },
+    { label: '🌙 Night', commits: night },
   ];
 
   const lines = oneDay.reduce((prev, cur) => {
     const percent = cur.commits / sum * 100;
     const line = [
-      `${cur.label}`.padEnd(9),
+      `${cur.label}`.padEnd(10),
       `${cur.commits.toString().padStart(5)} commits`.padEnd(14),
       generateBarChart(percent, 21),
       String(percent.toFixed(1)).padStart(5) + '%',
