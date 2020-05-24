@@ -10,8 +10,9 @@ export const userInfoQuery = `
 export const createContributedRepoQuery = (username: string) => `
   query {
     user(login: "${username}") {
-      repositoriesContributedTo(last: 100) {
+      repositoriesContributedTo(last: 100, includeUserRepositories: true) {
         nodes {
+          isFork
           name
           owner {
             login
